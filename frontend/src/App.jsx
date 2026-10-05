@@ -5,6 +5,9 @@ import {
   Film, Music, Code, Mail, Lock, User as UserIcon, LogIn, LogOut, EyeOff, ShieldCheck
 } from 'lucide-react';
 
+// Dynamic backend API URL: uses VITE_API_URL, defaults to Render in production, empty in dev (Vite proxy)
+const API_BASE_URL = (import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://file-uploader-c95r.onrender.com' : '')).replace(/\/$/, '');
+
 export default function App() {
   // Authentication State
   const [user, setUser] = useState(() => {
@@ -44,7 +47,7 @@ export default function App() {
 
   const checkHealth = async () => {
     try {
-      const res = await fetch('/api/health');
+      const res = await fetch(`${API_BASE_URL}/api/health`);
       const data = await res.json();
       setServerHealthy(data.success === true);
     } catch {
@@ -56,7 +59,7 @@ export default function App() {
   useEffect(() => {
     checkHealth();
     if (token) {
-      fetch('/api/auth/me', {
+      fetch(`${API_BASE_URL}/api/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then((res) => res.json())
@@ -84,7 +87,7 @@ export default function App() {
     try {
       setLoading(true);
       await checkHealth();
-      const res = await fetch('/api/files', {
+      const res = await fetch(`${API_BASE_URL}/api/files`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -132,7 +135,7 @@ export default function App() {
 
     if (isText) {
       setModalTextLoading(true);
-      fetch(`/api/files/${selectedFileModal.id}?token=${encodeURIComponent(token)}`)
+      fetch(`${API_BASE_URL}/api/files/${selectedFileModal.id}?token=${encodeURIComponent(token)}`)
         .then((res) => res.text())
         .then((text) => {
           setModalTextContent(text.slice(0, 100000));
@@ -153,7 +156,7 @@ export default function App() {
     setAuthError(null);
     setAuthLoading(true);
 
-    const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+    const endpoint = authMode === 'login' ? `${API_BASE_URL}/api/auth/login` : `${API_BASE_URL}/api/auth/register`;
     const payload = authMode === 'login'
       ? { email: authForm.email, password: authForm.password }
       : { name: authForm.name, email: authForm.email, password: authForm.password };
@@ -217,7 +220,7 @@ export default function App() {
 
     try {
       setUploadProgress(65);
-      const res = await fetch('/api/files/upload', {
+      const res = await fetch(`${API_BASE_URL}/api/files/upload`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData
@@ -273,7 +276,7 @@ export default function App() {
     if (!confirm(`Are you sure you want to permanently delete "${filename}" from your vault?`)) return;
 
     try {
-      const res = await fetch(`/api/files/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/files/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -675,7 +678,7 @@ export default function App() {
                           <span style={{ fontSize: '0.75rem' }}>Preview</span>
                         </button>
                         <a
-                          href={`/api/files/${file.id}/download?token=${encodeURIComponent(token)}`}
+                          href={`${API_BASE_URL}/api/files/${file.id}/download?token=${encodeURIComponent(token)}`}
                           title="Download File"
                           className="btn-secondary"
                           style={{ padding: '0.45rem 0.75rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
@@ -715,19 +718,19 @@ export default function App() {
             <div style={{ padding: '1.5rem', flex: 1, overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(2, 6, 23, 0.65)', minHeight: '18rem', maxHeight: '65vh' }}>
               {selectedFileModal.mimeType.startsWith('image/') || /\.(png|jpe?g|webp|gif|svg)$/i.test(selectedFileModal.filename) ? (
                 <img
-                  src={`/api/files/${selectedFileModal.id}?token=${encodeURIComponent(token || '')}`}
+                  src={`${API_BASE_URL}/api/files/${selectedFileModal.id}?token=${encodeURIComponent(token || '')}`}
                   alt={selectedFileModal.filename}
                   style={{ maxHeight: '55vh', maxWidth: '100%', borderRadius: '0.5rem', objectFit: 'contain' }}
                 />
               ) : selectedFileModal.mimeType.includes('pdf') || selectedFileModal.filename.toLowerCase().endsWith('.pdf') ? (
                 <iframe
-                  src={`/api/files/${selectedFileModal.id}?token=${encodeURIComponent(token || '')}`}
+                  src={`${API_BASE_URL}/api/files/${selectedFileModal.id}?token=${encodeURIComponent(token || '')}`}
                   title={selectedFileModal.filename}
                   style={{ width: '100%', height: '55vh', borderRadius: '0.5rem', border: '1px solid #1e293b', background: 'white' }}
                 />
               ) : selectedFileModal.mimeType.startsWith('video/') || /\.(mp4|webm|mov)$/i.test(selectedFileModal.filename) ? (
                 <video
-                  src={`/api/files/${selectedFileModal.id}?token=${encodeURIComponent(token || '')}`}
+                  src={`${API_BASE_URL}/api/files/${selectedFileModal.id}?token=${encodeURIComponent(token || '')}`}
                   controls
                   autoPlay={false}
                   style={{ maxHeight: '55vh', maxWidth: '100%', borderRadius: '0.5rem' }}
@@ -736,7 +739,7 @@ export default function App() {
                 <div style={{ width: '100%', maxWidth: '28rem', textAlign: 'center', padding: '2rem 1rem' }}>
                   <Music size={48} color="#ec4899" style={{ margin: '0 auto 1rem auto' }} />
                   <audio
-                    src={`/api/files/${selectedFileModal.id}?token=${encodeURIComponent(token || '')}`}
+                    src={`${API_BASE_URL}/api/files/${selectedFileModal.id}?token=${encodeURIComponent(token || '')}`}
                     controls
                     style={{ width: '100%', borderRadius: '0.5rem' }}
                   />
@@ -775,7 +778,7 @@ export default function App() {
                     Direct inline preview is not supported for this binary file format.
                   </p>
                   <a
-                    href={`/api/files/${selectedFileModal.id}/download?token=${encodeURIComponent(token || '')}`}
+                    href={`${API_BASE_URL}/api/files/${selectedFileModal.id}/download?token=${encodeURIComponent(token || '')}`}
                     className="btn-primary"
                     style={{ textDecoration: 'none', display: 'inline-flex' }}
                   >
@@ -789,7 +792,7 @@ export default function App() {
             <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #1e293b', background: 'rgba(15, 23, 42, 0.9)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: '#94a3b8' }}>
               <span>Size: {formatFileSize(selectedFileModal.size)}</span>
               <a
-                href={`/api/files/${selectedFileModal.id}/download?token=${encodeURIComponent(token || '')}`}
+                href={`${API_BASE_URL}/api/files/${selectedFileModal.id}/download?token=${encodeURIComponent(token || '')}`}
                 className="btn-primary"
                 style={{ textDecoration: 'none', padding: '0.45rem 1rem', fontSize: '0.8rem' }}
               >
